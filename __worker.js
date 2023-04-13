@@ -1,9 +1,7 @@
-addEventListener('fetch', (event) => {
-  event.respondWith(handleRequest(event.request));
-});
-
-async function handleRequest(request) {
+async function handleRequest(request, env) {
   const url = new URL(request.url);
+  const targetHost = env.production.targetHost;
+  const authKey = env.production.APIKEY;
   const fetchAPI = request.url.replace(url.host, `${targetHost}`);
 
   // 部分代理工具，请求由浏览器发起，跨域请求时会先发送一个 preflight 进行检查，也就是 OPTIONS 请求
@@ -18,12 +16,12 @@ async function handleRequest(request) {
   let body;
   if (request.method === 'POST') body = await request.json();
 
-  const authKey = `${APIKEY}`;
+  // const authKey = `${APIKEY}`;
 
   const payload = {
     method: request.method,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: authKey,
     },
     body: typeof body === 'object' ? JSON.stringify(body) : '{}',
@@ -38,7 +36,7 @@ async function handleRequest(request) {
     return new Response(JSON.stringify(results), {
       status: response.status,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   } else {
@@ -49,3 +47,9 @@ async function handleRequest(request) {
     });
   }
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    await handleRequest(request, env)
+  },
+};
